@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Weather Dashboard</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='dashboard.css') }}"
+    >
+</head>
+
+<body>
+
+    <main class="dashboard">
+
+        <h1>🌦️ Weather Pattern Analyzer</h1>
+
+        <p>
+            Understand Weather Through Data
+        </p>
+
+        <!-- SEARCH FORM -->
+
+        <form
+            class="search-form"
+            method="POST"
+            action="{{ url_for('dashboard') }}"
+        >
+
+            <input
+                type="text"
+                name="location"
+                placeholder="Enter city, district, or location"
+                required
+            >
+
+            <button type="submit">
+                🔍 Analyze Weather
+            </button>
+
+        </form>
+
+
+        <!-- ERROR MESSAGE -->
+
+        {% if error %}
+
+            <div class="error-message">
+                {{ error }}
+            </div>
+
+        {% endif %}
+
+
+        <!-- RECENT SEARCH HISTORY -->
+
+        <section class="history-section">
+
+            <h2>🕘 Recent Weather Searches</h2>
+
+            {% if search_history %}
+
+                <div class="history-list">
+
+                    {% for item in search_history %}
+
+                        <div class="history-item">
+
+                            <div class="history-details">
+
+                                <strong>
+                                    📍 {{ item[1] }}
+                                </strong>
+
+                                <small>
+                                    {{ item[2] }}
+                                </small>
+
+                            </div>
+
+                            <div class="history-actions">
+
+                                <!-- ANALYZE THIS LOCATION AGAIN -->
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for('dashboard') }}"
+                                >
+
+                                    <input
+                                        type="hidden"
+                                        name="location"
+                                        value="{{ item[1] }}"
+                                    >
+
+                                    <button type="submit">
+                                        🔄 Analyze Again
+                                    </button>
+
+                                </form>
+
+
+                                <!-- DELETE ONE SEARCH -->
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for(
+                                        'delete_search_route',
+                                        search_id=item[0]
+                                    ) }}"
+                                    onsubmit="return confirm(
+                                        'Delete this search from history?'
+                                    );"
+                                >
+
+                                    <button
+                                        type="submit"
+                                        class="delete-button"
+                                    >
+                                        🗑️ Delete
+                                    </button>
+
+                                </form>
+
+                            </div>
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+
+                <!-- CLEAR ALL HISTORY -->
+
+                <form
+                    method="POST"
+                    action="{{ url_for('clear_history_route') }}"
+                    onsubmit="return confirm(
+                        'Are you sure you want to clear all search history?'
+                    );"
+                >
+
+                    <button
+                        type="submit"
+                        class="clear-history-button"
+                    >
+                        🧹 Clear All History
+                    </button>
+
+                </form>
+
+            {% else %}
+
+                <p>
+                    No search history yet. Search for a location
+                    to see it here!
+                </p>
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- WEATHER RESULTS -->
+
+        {% if weather %}
+
+            <section class="weather-results">
+
+                <h2>
+                    📍 {{ weather.location }}
+                </h2>
+
+                <p>
+                    {% if weather.state %}
+                        {{ weather.state }},
+                    {% endif %}
+
+                    {{ weather.country }}
+                </p>
+
+                <p>
+                    <strong>Latitude:</strong>
+                    {{ weather.latitude }}
+
+                    &nbsp; | &nbsp;
+
+                    <strong>Longitude:</strong>
+                    {{ weather.longitude }}
+                </p>
+
+
+                <!-- CURRENT WEATHER CARDS -->
+
+                <div class="weather-data">
+
+                    <div class="weather-card">
+                        <h3>🌡️ Temperature</h3>
+                        <p>
+                            {{ weather.temperature }} °C
+                        </p>
+                    </div>
+
+                    <div class="weather-card">
+                        <h3>💧 Humidity</h3>
+                        <p>
+                            {{ weather.humidity }} %
+                        </p>
+                    </div>
+
+                    <div class="weather-card">
+                        <h3>🌧️ Rainfall</h3>
+                        <p>
+                            {{ weather.rainfall }} mm
+                        </p>
+                    </div>
+
+                    <div class="weather-card">
+                        <h3>💨 Wind Speed</h3>
+                        <p>
+                            {{ weather.wind }} km/h
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <!-- WEATHER CLASSIFICATION -->
+
+                {% if weather_condition %}
+
+                    <div class="analysis">
+
+                        <h2>🌤️ Weather Condition</h2>
+
+                        <p>
+                            The current temperature category is:
+
+                            <strong>
+                                {{ weather_condition }}
+                            </strong>
+                        </p>
+
+                    </div>
+
+                {% endif %}
+
+
+                <!-- AUTOMATIC SUMMARY -->
+
+                {% if summary %}
+
+                    <div class="analysis">
+
+                        <h2>📝 Automatic Weather Summary</h2>
+
+                        <p>{{ summary }}</p>
+
+                    </div>
+
+                {% endif %}
+
+
+                <!-- 7-DAY FORECAST -->
+
+                <section class="forecast-section">
+
+                    <h2>📅 7-Day Weather Forecast</h2>
+
+                    <div class="table-container">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Max Temperature (°C)</th>
+                                    <th>Min Temperature (°C)</th>
+                                    <th>Rainfall (mm)</th>
+                                    <th>Wind Speed (km/h)</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                {% for date in weather.dates %}
+
+                                    <tr>
+
+                                        <td>{{ date }}</td>
+
+                                        <td>
+                                            {{ weather.max_temperature[
+                                                loop.index0
+                                            ] }}
+                                        </td>
+
+                                        <td>
+                                            {{ weather.min_temperature[
+                                                loop.index0
+                                            ] }}
+                                        </td>
+
+                                        <td>
+                                            {{ weather.daily_rainfall[
+                                                loop.index0
+                                            ] }}
+                                        </td>
+
+                                        <td>
+                                            {{ weather.daily_wind[
+                                                loop.index0
+                                            ] }}
+                                        </td>
+
+                                    </tr>
+
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                    <!-- CSV DOWNLOAD -->
+
+                    <a
+                        class="download-button"
+                        href="{{ url_for(
+                            'download_weather',
+                            location=weather.location
+                        ) }}"
+                    >
+                        📥 Download Forecast as CSV
+                    </a>
+
+                </section>
+
+
+                <!-- WEATHER GRAPHS -->
+
+                <section class="graphs-section">
+
+                    <h2>📊 Weather Analysis Graphs</h2>
+
+                    <div class="graph">
+
+                        <h3>🌡️ Temperature Analysis</h3>
+
+                        <img
+                            src="{{ url_for(
+                                'static',
+                                filename='temperature.png'
+                            ) }}"
+                            alt="Temperature analysis graph"
+                        >
+
+                    </div>
+
+                    <div class="graph">
+
+                        <h3>💧 Humidity Analysis</h3>
+
+                        <img
+                            src="{{ url_for(
+                                'static',
+                                filename='humidity.png'
+                            ) }}"
+                            alt="Humidity analysis graph"
+                        >
+
+                    </div>
+
+                    <div class="graph">
+
+                        <h3>🌧️ Rainfall Analysis</h3>
+
+                        <img
+                            src="{{ url_for(
+                                'static',
+                                filename='rainfall.png'
+                            ) }}"
+                            alt="Rainfall analysis graph"
+                        >
+
+                    </div>
+
+                    <div class="graph">
+
+                        <h3>💨 Wind Speed Analysis</h3>
+
+                        <img
+                            src="{{ url_for(
+                                'static',
+                                filename='wind.png'
+                            ) }}"
+                            alt="Wind speed analysis graph"
+                        >
+
+                    </div>
+
+                </section>
+
+
+                <!-- TEMPERATURE PREDICTION -->
+
+                <section class="analysis">
+
+                    <h2>🤖 Temperature Prediction</h2>
+
+                    {% if weather.predicted_temperature is not none %}
+
+                        <p>
+                            The estimated next-day temperature trend
+                            is approximately
+
+                            <strong>
+                                {{ weather.predicted_temperature }} °C
+                            </strong>.
+                        </p>
+
+                        <img
+                            src="{{ url_for(
+                                'static',
+                                filename='prediction.png'
+                            ) }}"
+                            alt="Temperature prediction graph"
+                        >
+
+                        <p>
+                            This is a simple estimate based on a
+                            linear regression model and the available
+                            forecast data. It is not an official
+                            weather forecast.
+                        </p>
+
+                    {% else %}
+
+                        <p>
+                            Temperature prediction is currently
+                            unavailable.
+                        </p>
+
+                    {% endif %}
+
+                </section>
+
+
+                <!-- WEATHER INSIGHTS -->
+
+                <section class="analysis">
+
+                    <h2>💡 Weather Insights</h2>
+
+                    {% if insights %}
+
+                        <ul>
+
+                            {% for insight in insights %}
+
+                                <li>{{ insight }}</li>
+
+                            {% endfor %}
+
+                        </ul>
+
+                    {% else %}
+
+                        <p>
+                            No additional insights are available.
+                        </p>
+
+                    {% endif %}
+
+                </section>
+
+            </section>
+
+        {% endif %}
+
+
+        <!-- BACK TO HOME -->
+
+        <p>
+            <a href="{{ url_for('home') }}">
+                🏠 Back to Home
+            </a>
+        </p>
+
+    </main>
+
+</body>
+</html>
